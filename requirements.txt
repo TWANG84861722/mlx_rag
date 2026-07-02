@@ -1,0 +1,40 @@
+# ═══════════════════════════════════════════════════════════
+#  requirements.txt —— 项目的直接依赖（顶层包）+ 钉死版本
+#  安装：  pip install -r requirements.txt
+#  "==" 表示精确锁版本（可复现）；想让它随手升级可改成 ">="，但复现性会下降。
+#  注：本地嵌入/重排模型(bge-m3 / bge-reranker) 是模型文件，不在这里，需另行下载。
+# ═══════════════════════════════════════════════════════════
+
+# 检索核心：向量库 + 数值
+faiss-cpu==1.14.2
+numpy==2.4.6
+
+# 本地模型：MLX 嵌入(bge-m3) + 交叉编码器重排(bge-reranker-v2-m3)
+mlx-embeddings==0.1.0
+sentence-transformers==5.5.1
+
+# 混合检索辅助：BM25 + Kneedle 拐点自动截断
+rank-bm25==0.2.2
+kneed==0.8.6
+
+# LLM / VL 调用（各家都走 OpenAI 兼容接口，一个库够）
+openai==2.44.0
+
+# 文本切块
+langchain-text-splitters==1.1.2
+
+# 解析：PDF + Office(docx/pptx/xlsx) + 图像尺寸
+PyMuPDF==1.27.2.3
+python-docx==1.2.0
+python-pptx==1.0.2
+pandas==3.0.3
+openpyxl==3.1.5
+pillow==12.2.0
+
+# 配置 / 密钥
+python-dotenv==1.2.2
+PyYAML==6.0.3
+
+# 可选：基因别名扩展（hgnc.py）。不装则 expand_query 优雅跳过；
+# 装了首次会联网 MyGene 建缓存；已有 db/gene_aliases.json 时无需再装。
+# mygene==3.2.2
