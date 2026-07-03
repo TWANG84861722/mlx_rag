@@ -44,3 +44,7 @@ PyYAML==6.0.3
 # sounddevice 录音(跨平台) + mlx-whisper 本地转写(仅 Apple Silicon，首次下 Whisper 模型 ~1.6G)。
 # sounddevice==0.5.5
 # mlx-whisper==0.4.3; platform_system == "Darwin" and platform_machine == "arm64"
+
+# 可选：手机问答网页服务（server.py，同一 WiFi 下手机浏览器访问）。
+# fastapi==0.139.0
+# uvicorn==0.49.0

@@ -104,6 +104,12 @@ Questions can be asked in **any language** — they are normalized to an English
 prompt to ask by speaking. Speech (any language) is transcribed locally with Whisper (MLX), then
 normalized to an English query. First use downloads the Whisper model (~1.6 GB).
 
+**Ask from your phone (optional, same Wi-Fi):** `pip install fastapi uvicorn`, then run `python server.py`
+on the machine that holds the index. It prints a `http://<LAN-IP>:8000` URL — open it in your phone's
+browser (same Wi-Fi) to get an input box + answer view. Use the phone keyboard's built-in dictation for
+voice. The service has no auth and binds to the LAN only — use it on a trusted home network, don't expose
+port 8000 to the internet.
+
 ## Configuration
 
 - **`models.yaml`** — pick the provider/models. Set `active` to `qwen` / `openai` /
