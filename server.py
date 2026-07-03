@@ -139,7 +139,7 @@ async function ask() {
     if (j.error || !j.job_id) { ans.textContent = 'Error: ' + (j.error || 'no job id'); return; }
     // 2) 每隔 N 毫秒轮询一次，直到 done/error（每次轮询都是瞬时返回，永不超时）
     while (true) {
-      await sleep(10000);      // 轮询间隔（毫秒）：10000 = 每 10 秒问一次
+      await sleep(3000);       // 轮询间隔（毫秒）：3000 = 每 3 秒问一次
       const rr = await fetch('/result/' + j.job_id);
       const d = await rr.json();
       if (d.status === 'running') {
