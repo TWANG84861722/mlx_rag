@@ -16,10 +16,6 @@ import logging
 import re
 
 import fitz
-try:
-    import pymupdf.layout  # 可选：某些 PyMuPDF 构建带的版面分析增强；没有也能正常跑（纯副作用导入，代码未直接引用）
-except ImportError:
-    pass
 
 import config
 import model_client
