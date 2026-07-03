@@ -5,8 +5,9 @@ scientific-literature library. It parses PDFs and Office files — **including f
 three-line tables, and scanned pages** — into a searchable index, then answers
 questions over them with citations.
 
-Embeddings and reranking run **locally** on Apple Silicon (MLX); the chat/vision LLM
-runs through any **OpenAI-compatible** provider (Qwen by default), switchable in one line.
+Embeddings and reranking run **locally** — MLX on Apple Silicon, sentence-transformers
+(torch) on Windows/Linux (GPU-accelerated when available); the chat/vision LLM runs
+through any **OpenAI-compatible** provider (Qwen by default), switchable in one line.
 
 ## Features
 
@@ -47,12 +48,18 @@ runs through any **OpenAI-compatible** provider (Qwen by default), switchable in
 
 ## Prerequisites
 
-- **Apple Silicon Mac** (MLX is required for the local embedding/rerank models).
 - **Python 3.11**.
-- **Local models** (download once, then set their paths in `config.py`):
-  - `bge-m3` — embeddings (`EMBED_MODEL`)
-  - `bge-reranker-v2-m3` — reranker (`RERANKER_MODEL`)
-- **An API key** for your chosen provider (default: DashScope International for Qwen).
+- **Platform** — runs on macOS, Windows, or Linux. The embedding backend is chosen
+  automatically (`EMBED_BACKEND=auto`):
+  - **Apple Silicon** → MLX (native acceleration);
+  - **Windows / Linux / GPU server** → sentence-transformers (torch; uses CUDA automatically
+    if a GPU is present). This path needs no extra install — `sentence-transformers` is already
+    a dependency (the reranker uses it), and `pip` skips the Apple-only `mlx-embeddings` via a
+    platform marker.
+- **Local models** — `bge-m3` (embeddings) and `bge-reranker-v2-m3` (reranker). By default they
+  are auto-downloaded from HuggingFace on first run; set `EMBED_MODEL` / `RERANKER_MODEL` (env)
+  to point at local copies instead.
+- **An API key** for your chosen chat/vision provider (default: DashScope International for Qwen).
 
 ## Installation
 

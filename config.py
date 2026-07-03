@@ -1,4 +1,5 @@
 import logging
+import os
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,10 +12,20 @@ load_dotenv()
 DATA_DIR = Path("data")
 # DB_DIR 在下面按 CHUNK_SIZE 自动命名（见 Ingestion 段）
 
-# ── Local models（embedding + reranker 走本地，不参与 provider 切换）──
-# embedding 模型必须与建库时一致，所以锁定本地 bge-m3。
-EMBED_MODEL    = "/Users/taowang/models/bge-m3"
-RERANKER_MODEL = "/Users/taowang/models/bge-reranker-v2-m3"
+# ── Local models（embedding + reranker；跨平台可移植）──
+# 解析优先级：环境变量 > 本机已存在的本地路径 > HuggingFace 模型ID(自动下载)。
+# → Mac 上继续用 ~/models 里的本地模型(不重下)；Windows/服务器上没本地路径 → 自动从 HF 下载。
+def _resolve_model(env_name, local_default, hf_id):
+    v = os.environ.get(env_name)
+    if v:
+        return v
+    return local_default if Path(local_default).exists() else hf_id
+
+EMBED_MODEL    = _resolve_model("EMBED_MODEL",    "/Users/taowang/models/bge-m3",              "BAAI/bge-m3")
+RERANKER_MODEL = _resolve_model("RERANKER_MODEL", "/Users/taowang/models/bge-reranker-v2-m3", "BAAI/bge-reranker-v2-m3")
+
+# 嵌入后端：auto(Apple Silicon→MLX，其余→sentence-transformers/torch) | mlx | st。环境变量 EMBED_BACKEND 可覆盖。
+EMBED_BACKEND  = os.environ.get("EMBED_BACKEND", "auto")
 
 # ── LLM / VL provider（可切换）─────────────────────────────
 # 一键换模型：编辑 models.yaml 里的 active（openai/claude/gemini/qwen/local）。

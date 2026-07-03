@@ -7,14 +7,14 @@ from pathlib import Path
 import faiss
 import numpy as np
 
-from mlx_embeddings import load, generate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 import config
 from config import (
     DATA_DIR, DB_DIR,
-    EMBED_MODEL, CHUNK_SIZE, CHUNK_OVERLAP, BATCH_SIZE,
+    CHUNK_SIZE, CHUNK_OVERLAP, BATCH_SIZE,
 )
+import embedder
 import loaders
 
 logger = logging.getLogger(__name__)
@@ -54,8 +54,7 @@ def main():
     """扫描 data/ → 逐文件解析 → 切块 → 嵌入 → 建 FAISS 索引 → 存盘。"""
     DB_DIR.mkdir(exist_ok=True)
 
-    logger.info("Loading BGE-M3...")
-    embed_model, tokenizer = load(EMBED_MODEL)
+    logger.info(f"Embedder backend: {embedder.backend()}")   # 触发加载 + 打印 mlx/st
 
     # 载入已有索引 / 元数据（支持断点续传）
     index_path    = DB_DIR / "index.faiss"
@@ -107,8 +106,7 @@ def main():
         texts = [c["text"] for c in paper_chunks]
         vecs_list = []
         for i in range(0, len(texts), BATCH_SIZE):
-            emb = generate(embed_model, tokenizer, texts[i : i + BATCH_SIZE])
-            vecs_list.append(np.array(emb.text_embeds, dtype=np.float32))
+            vecs_list.append(embedder.embed(texts[i : i + BATCH_SIZE]))
         vecs = np.concatenate(vecs_list, axis=0)
         faiss.normalize_L2(vecs)
 

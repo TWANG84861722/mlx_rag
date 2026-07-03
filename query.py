@@ -6,15 +6,15 @@ from pathlib import Path
 import faiss
 import numpy as np
 
-from mlx_embeddings import load, generate
 from sentence_transformers import CrossEncoder
 from kneed import KneeLocator
 from rank_bm25 import BM25Okapi
 from hgnc import expand_query
 
 import config
+import embedder
 from config import (
-    DB_DIR, EMBED_MODEL, RERANKER_MODEL,
+    DB_DIR, RERANKER_MODEL,
     CANDIDATE_K, MIN_K,
 )
 
@@ -32,8 +32,7 @@ if not index_path.exists():
 if not metadata_path.exists():
     raise FileNotFoundError(f"Metadata not found at {metadata_path}. Run ingest.py first.")
 
-logger.info("Loading BGE-M3...")
-embed_model, tokenizer = load(EMBED_MODEL)
+logger.info(f"Embedder backend: {embedder.backend()}")
 
 logger.info("Loading reranker...")
 reranker = CrossEncoder(RERANKER_MODEL)
@@ -90,7 +89,7 @@ def _hybrid_fuse(question, pool):
     expanded = expand_query(question)
 
     # 向量路（query 和 doc 现在都是纯正文，对称）
-    qv = np.array(generate(embed_model, tokenizer, [expanded]).text_embeds, dtype=np.float32)
+    qv = embedder.embed([expanded])
     faiss.normalize_L2(qv)
     _, I = index.search(qv, pool)
     vec_ranked = [int(i) for i in I[0] if i >= 0]

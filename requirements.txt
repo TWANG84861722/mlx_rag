@@ -9,9 +9,11 @@
 faiss-cpu==1.14.2
 numpy==2.4.6
 
-# 本地模型：MLX 嵌入(bge-m3) + 交叉编码器重排(bge-reranker-v2-m3)
-mlx-embeddings==0.1.0
+# 本地模型后端（跨平台）：
+#  sentence-transformers = 嵌入(bge-m3)+重排(bge-reranker) 的可移植后端(torch，有 CUDA 自动上 GPU)
+#  mlx-embeddings        = 嵌入在 Apple Silicon 上的原生加速；平台标记让它只在 Mac(arm64) 安装
 sentence-transformers==5.5.1
+mlx-embeddings==0.1.0; platform_system == "Darwin" and platform_machine == "arm64"
 
 # 混合检索辅助：BM25 + Kneedle 拐点自动截断
 rank-bm25==0.2.2
