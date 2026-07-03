@@ -7,7 +7,6 @@ import faiss
 import numpy as np
 
 from sentence_transformers import CrossEncoder
-from kneed import KneeLocator
 from rank_bm25 import BM25Okapi
 from hgnc import expand_query
 
@@ -15,7 +14,7 @@ import config
 import embedder
 from config import (
     DB_DIR, RERANKER_MODEL,
-    CANDIDATE_K, MIN_K,
+    CANDIDATE_K,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,39 +106,6 @@ def _hybrid_fuse(question, pool):
         for r, idx in enumerate(ranks):
             rrf[idx] = rrf.get(idx, 0.0) + 1.0 / (60 + r)
     return sorted(rrf, key=lambda i: rrf[i], reverse=True)[:pool]
-
-
-def retrieve(question):
-    # ── 1. 混合检索取候选 ──
-    candidates = [metadata[i] for i in _hybrid_fuse(question, CANDIDATE_K)]
-
-    # ── 2. Rerank（带文档/章节上下文）──
-    pairs = [[question, _rerank_text(c)] for c in candidates]
-    rerank_scores = reranker.predict(pairs)
-    ranked = sorted(zip(rerank_scores, candidates), key=lambda x: x[0], reverse=True)
-    sorted_scores = [float(r[0]) for r in ranked]
-    sorted_chunks = [r[1] for r in ranked]
-
-    # ── 3. Kneedle 自动截断 ──
-    kneedle = KneeLocator(
-        list(range(len(sorted_scores))),
-        sorted_scores,
-        curve="convex",
-        direction="decreasing",
-        interp_method="polynomial",
-    )
-    cutoff = kneedle.knee if kneedle.knee is not None else MIN_K
-    cutoff = max(cutoff, MIN_K)
-
-    # ── 4. 打包（rerank logit > 0 硬下限）──
-    results = []
-    for chunk, score in zip(sorted_chunks[:cutoff], sorted_scores[:cutoff]):
-        if score <= 0:
-            break
-        results.append({"rerank_score": score, **chunk})
-
-    logger.info(f"Retrieved {len(results)} chunks (knee={cutoff})")
-    return results
 
 
 def retrieve_page(question, offset, page_size=None):

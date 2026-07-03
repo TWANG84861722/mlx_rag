@@ -15,9 +15,8 @@ numpy==2.4.6
 sentence-transformers==5.5.1
 mlx-embeddings==0.1.0; platform_system == "Darwin" and platform_machine == "arm64"
 
-# 混合检索辅助：BM25 + Kneedle 拐点自动截断
+# 混合检索辅助：BM25
 rank-bm25==0.2.2
-kneed==0.8.6
 
 # LLM / VL 调用（各家都走 OpenAI 兼容接口，一个库够）
 openai==2.44.0

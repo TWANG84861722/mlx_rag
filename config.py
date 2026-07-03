@@ -62,8 +62,7 @@ BATCH_SIZE    = 64
 DB_DIR = Path(f"index_chunk{CHUNK_SIZE}")
 
 # ── Retrieval ───────────────────────────────────────────────
-CANDIDATE_K = 100
-MIN_K       = 3
+CANDIDATE_K = 100      # 每页取多少候选送进 rerank（也是"召回窗口"大小）
 
 # ── Chat ────────────────────────────────────────────────────
 MAX_HISTORY_TURNS = 10
