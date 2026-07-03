@@ -1,13 +1,27 @@
 # docsense
 
-A local, multimodal Retrieval-Augmented Generation (RAG) system for a personal
-scientific-literature library. It parses PDFs and Office files — **including figures,
-three-line tables, and scanned pages** — into a searchable index, then answers
-questions over them with citations.
+**Chat with your own library of papers — and get answers with citations.**
 
-Embeddings and reranking run **locally** — MLX on Apple Silicon, sentence-transformers
-(torch) on Windows/Linux (GPU-accelerated when available); the chat/vision LLM runs
-through any **OpenAI-compatible** provider (Qwen by default), switchable in one line.
+docsense is a private, intelligent Q&A system for your documents. Point it at a folder of PDFs and
+Office files, ask a question in plain language — *"What chromosome is LGMD linked to?"* — and get a
+concise, sourced answer drawn from your own collection. Think of it as ChatGPT or Google's NotebookLM,
+but over **your** papers and running on **your** computer.
+
+What sets it apart:
+
+- **It reads the whole paper, not just the text.** Figures, three-line tables, and even fully scanned
+  (image-only) pages are interpreted by a vision model and made searchable — so an answer can come from
+  a chart or a table, not only the prose.
+- **Your documents stay private.** The search "brain" — turning text into vectors and reranking results —
+  runs locally on your own machine (MLX on Apple Silicon, or PyTorch on Windows/Linux, GPU-accelerated
+  when available). Your library is never uploaded to build the index.
+- **Ask by text or voice, in any language** — from the terminal or your phone's browser. Answers come
+  back in English, each grounded in the sources it was drawn from.
+
+Under the hood it's a *multimodal Retrieval-Augmented Generation (RAG)* pipeline: it indexes your files,
+retrieves the passages most relevant to each question, and has a language model synthesize a grounded
+answer. The chat/vision model runs through any **OpenAI-compatible** provider (Qwen by default),
+switchable in one line.
 
 ## Features
 
