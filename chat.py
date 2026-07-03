@@ -29,17 +29,22 @@ Extracted findings:
 {extractions}
 """
 
-CONDENSE_PROMPT_TMPL = """Given the conversation history below, rewrite the LAST user question into a \
-standalone, self-contained question: replace any references (it, the second one, that, these, etc.) with \
-the specific names they refer to. If the question is already self-contained, return it unchanged. \
-Keep it in the same language as the question. Output ONLY the rewritten question — no explanation, no quotes.
+CONDENSE_PROMPT_TMPL = """Rewrite the LAST user question into a standalone, self-contained question \
+**in English**, for searching an English scientific-paper corpus.
+- Translate to English if the question is in another language.
+- Resolve any references (it, the second one, that, these, ...) using the conversation history, \
+replacing them with the specific names they refer to.
+- If a gene symbol or technical term looks garbled (e.g. from speech recognition), correct it to the \
+most likely intended term given the context.
+- If it is already a standalone English question, return it unchanged.
+Output ONLY the rewritten English question — no explanation, no quotes.
 
 Conversation history:
 {history}
 
 Last user question: {question}
 
-Rewritten question:"""
+Rewritten standalone English question:"""
 
 logger = logging.getLogger(__name__)
 
@@ -135,22 +140,27 @@ def map_reduce(question):
 
 
 def condense_question(question, history):
-    """用对话历史把当前问题改写成"自足问题"（供检索用）。
+    """把问题（任何语言）规整成一个自足的【英文】问题——供检索用。
 
-    多轮 RAG 的关键：检索是拿"当前问题"这句话去匹配文档，而"它定位在哪?"这类带指代的话
-    检不到东西。所以先让 LLM 结合【完整问答历史】把它改写成不依赖上下文的完整问题，再去检索。
-    history 为空（第一问）时原样返回，不调 LLM。指代对象常在"上一轮回答"里，所以回答也要带上。
+    一次 LLM 调用同时干三件事：
+    1. 翻译成英文（语料是英文；BM25 只认字面，同语言才匹配得上，否则半条腿废掉）；
+    2. 用对话历史解掉指代（"它/第二个" → 具体名称，指代对象常在上一轮回答里）；
+    3. 顺手修语音识别在基因名/术语上的错（靠上下文猜回）。
+    已是英文 且 无历史（无需解指代）时，直接返回、不调 LLM（省一次）。
     """
-    if not history:
+    if question.isascii() and not history:      # 已是英文、又没历史要解 → 原样，省一次 LLM
         return question
-    lines = []
-    for m in history:
-        who = "User" if m["role"] == "user" else "Assistant"
-        content = m["content"]
-        if m["role"] == "assistant" and len(content) > 500:
-            content = content[:500] + " …"          # 回答可能很长 → 截断省 token（够解指代即可）
-        lines.append(f"{who}: {content}")
-    prompt = CONDENSE_PROMPT_TMPL.format(history="\n".join(lines), question=question)
+    hist = "(none)"
+    if history:
+        lines = []
+        for m in history:
+            who = "User" if m["role"] == "user" else "Assistant"
+            content = m["content"]
+            if m["role"] == "assistant" and len(content) > 500:
+                content = content[:500] + " …"      # 回答可能很长 → 截断省 token（够解指代即可）
+            lines.append(f"{who}: {content}")
+        hist = "\n".join(lines)
+    prompt = CONDENSE_PROMPT_TMPL.format(history=hist, question=question)
     rewritten = model_client.chat([{"role": "user", "content": prompt}], max_tokens=200).strip()
     return rewritten or question
 
@@ -172,7 +182,7 @@ def main():
         # 多轮：先把带指代的追问改写成自足问题，再检索作答（第一问 history 空→原样）
         standalone = condense_question(question, history)
         if standalone != question:
-            print(f"[改写为自足问题 → {standalone}]")
+            print(f"[规整为英文检索问题 → {standalone}]")
         answer, sources = map_reduce(standalone)
         if not sources:
             print("\nNo relevant documents found.")
