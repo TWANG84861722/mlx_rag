@@ -115,7 +115,7 @@ def map_reduce(question):
             break
 
         scores = [c["rerank_score"] for c in chunks]
-        print(f"\n[Page {page} — FAISS chunks {offset+1}–{offset+len(chunks)}]"
+        print(f"\n[Page {page} — candidates {offset+1}–{offset+len(chunks)} (hybrid FAISS+BM25→RRF, then reranked)]"
               f"  rerank: max={max(scores):.3f}  median={sorted(scores)[len(scores)//2]:.3f}  min={min(scores):.3f}")
         extractions, sources, early_stopped = map_phase(question, chunks)
         all_extractions.extend(extractions)
