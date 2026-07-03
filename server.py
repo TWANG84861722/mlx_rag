@@ -167,7 +167,8 @@ async function reset() {
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    return PAGE
+    # no-store：让手机浏览器每次都拿最新页面，免得改了代码手机还跑旧缓存
+    return HTMLResponse(PAGE, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/favicon.ico")
@@ -186,6 +187,7 @@ def _run_job(job_id, question):
     with _job_lock:                       # 一次只跑一个：模型/检索非线程安全
         try:
             standalone = chat.condense_question(question, _history)
+            logging.info("收到问题: %r  →  规整为英文: %r", question, standalone)
             answer, sources = chat.map_reduce(standalone)
 
             _history.append({"role": "user", "content": question})
