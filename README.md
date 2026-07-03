@@ -16,12 +16,15 @@ through any **OpenAI-compatible** provider (Qwen by default), switchable in one 
   fully **scanned PDFs** (no text layer) are transcribed page-by-page.
 - **Robust figure/table handling** — figure captions on any side (above / below /
   beside) and across pages; table captions above *or* below the table.
-- **Hybrid retrieval** — dense vectors (FAISS) + lexical BM25, fused with
-  Reciprocal Rank Fusion, then a cross-encoder reranker and a Kneedle cutoff.
+- **Hybrid retrieval, no lossy cutoff** — each round reranks the *full union* of the FAISS and
+  BM25 candidates with a cross-encoder; while a round stays productive it deepens and pulls the
+  next batch, so relevant-but-low-scoring chunks are never discarded before the LLM sees them.
 - **Gene-alias expansion** — queries mentioning a gene symbol also match its aliases
   (optional; degrades gracefully if unavailable).
 - **Map-reduce QA with multi-turn follow-ups** — per-chunk extraction then synthesis;
   follow-up questions ("what about the second one?") are rewritten into standalone queries.
+- **Ask in any language, by text or voice** — questions are normalized to an English query for
+  retrieval (answers stay English); optional local speech-to-text and a phone (same-Wi-Fi) web UI.
 - **One-line provider switching** — edit `models.yaml` (`qwen` / `openai` / `claude` / `gemini`).
 - **VL result cache** — every vision call is cached on disk, so re-parsing/re-chunking is nearly free.
 
@@ -39,11 +42,11 @@ through any **OpenAI-compatible** provider (Qwen by default), switchable in one 
    question
               │
    chat.py    ▼
-     rewrite follow-up (multi-turn)  ──►  hybrid retrieve (FAISS + BM25 → RRF)
+     rewrite follow-up (multi-turn)  ──►  FAISS ∪ BM25 union  (deepening rounds)
               │
-     rerank (bge-reranker, local) → Kneedle cutoff
+     rerank (bge-reranker, local) — full union, no cutoff
               │
-     map-reduce over chunks (chat LLM)  ──►  grounded answer + sources
+     map-reduce: LLM judges every candidate  ──►  grounded answer + sources
 ```
 
 ## Prerequisites
@@ -126,8 +129,10 @@ config.py            # paths, chunking params, provider resolution
 models.yaml          # provider/model registry (one-line switching)
 model_client.py      # unified chat() / describe_image() + VL disk cache
 ingest.py            # parse → chunk → embed → FAISS index
-query.py             # hybrid retrieval (FAISS + BM25 + RRF) + rerank + cutoff
+query.py             # hybrid retrieval (FAISS ∪ BM25 union, reranked, deepening rounds)
 chat.py              # map-reduce QA + multi-turn query rewriting (REPL)
+voice.py             # optional voice input (mic → local Whisper → text)
+server.py            # optional phone web UI (same-Wi-Fi, FastAPI)
 hgnc.py              # gene-alias query expansion (optional)
 loaders/             # per-format parsers (pdf, docx, pptx, excel, txt, office images)
 ```
